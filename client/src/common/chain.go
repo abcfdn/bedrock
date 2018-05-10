@@ -11,10 +11,12 @@ func (bc *BlockChain) AddBlock(data string) {
 }
 
 func (bc *BlockChain) String() string {
-    bs := make([]byte)
+    bs := make([]byte, 0)
     for _, block := range bc.Blocks {
-        block
+        bs = append(bs, []byte(block.String())...)
+        bs = append(bs, '\n')
     }
+    return string(bs)
 }
 
 func NewBlockChain() *BlockChain {
