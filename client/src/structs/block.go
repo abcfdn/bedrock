@@ -1,9 +1,10 @@
-package common
+package structs
 
 import (
     "crypto/sha256"
-    "strconv"
     "encoding/hex"
+    "consensus/pow"
+    "common"
     "fmt"
 )
 
@@ -11,13 +12,13 @@ type Block struct {
     Height uint64
     Data string
     PrevHash, Hash []byte
+    Nonce uint64
 }
 
 func (b *Block) Content() []byte {
-    content := []byte(strconv.FormatUint(b.Height, 10))
+    content := common.UintToHex(b.Height)
     content = append(content, []byte(b.Data)...)
-    content = append(content, b.PrevHash...)
-    return content
+    return append(content, b.PrevHash...)
 }
 
 func (b *Block) String() string {
@@ -31,7 +32,9 @@ func (b *Block) String() string {
 }
 
 func (b *Block) SetHash() {
-    hash := sha256.Sum256(b.Content())
+    nonce, hash := pow.Run()
+    block.Hash = hash[:]
+    block.Nonce = nonce
     b.Hash = hash[:]
 }
 

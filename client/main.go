@@ -2,11 +2,11 @@ package main
 
 import (
     "fmt"
-    "common"
+    "structs"
 )
 
 func main() {
-    bc := common.NewBlockChain()
+    bc := structs.NewBlockChain()
     bc.AddBlock("first")
     bc.AddBlock("second")
     fmt.Println(bc);

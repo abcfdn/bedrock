@@ -1,4 +1,4 @@
-package common
+package structs
 
 type BlockChain struct {
     Blocks []*Block
