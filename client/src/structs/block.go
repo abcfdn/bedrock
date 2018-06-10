@@ -1,10 +1,8 @@
 package structs
 
 import (
-    "encoding/hex"
-    "consensus/pow"
     "common"
-    "time"
+    "encoding/hex"
     "fmt"
 )
 
@@ -14,7 +12,7 @@ type BlockHeader struct {
 }
 
 type Block struct {
-    Header BlockHeader
+    Header *BlockHeader
     Data string
 }
 
@@ -29,20 +27,8 @@ func (b *Block) String() string {
     )
 }
 
-func NewGenesisBlock() *Block {
-    header := &BlockHeader{1, time.now(), 0, []byte{}, []byte{}}
-    block := &Block{header, "Genesis Block"}
-    return block
-}
-
 func NewBlock(prev *Block, data string) *Block {
-    header := &BlockHeader{prev.Header.Height + 1, time.now(), 0, prevHash, []byte{}}
+    header := &BlockHeader{prev.Header.Height + 1, common.MakeTimestamp(), 0, prev.Header.Hash, []byte{}}
     block := &Block{header, data}
     return block
-}
-
-func (b *Block) Content() []byte {
-    content := common.UintToHex(b.Header.Height)
-    content = append(content, []byte(b.Header.Data)...)
-    return append(content, b.Header.PrevHash...)
 }

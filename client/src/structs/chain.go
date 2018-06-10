@@ -10,12 +10,8 @@ func CurrentBlockchain() *BlockChain {
     return blockchain
 }
 
-func (bc *BlockChain) AddBlock(block *Block) {
-    if !IsBlockValid(block, bc.Blocks[len(bc.Blocks) - 1]) {
-        return
-    }
-
-    bc.Blocks = append(bc.Blocks, block)
+func (blockchain *BlockChain) AddBlock(block *Block) {
+    blockchain.Blocks = append(blockchain.Blocks, block)
 }
 
 func String() string {
@@ -27,8 +23,8 @@ func String() string {
     return string(bs)
 }
 
-func NewBlockChain() {
-    blockchain = &BlockChain{[]*Block{NewGenesisBlock()}}
+func NewBlockchain(genesisBlock *Block) {
+    blockchain = &BlockChain{[]*Block{genesisBlock}}
 }
 
 func ReplaceChain(newBlockchain *BlockChain) {

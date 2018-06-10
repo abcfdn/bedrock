@@ -1,11 +1,10 @@
 package pow
 
 import (
-    "structs"
     "common"
+    "structs"
     "crypto/sha256"
     "encoding/hex"
-    "math/big"
     "strings"
     "time"
     "fmt"
@@ -13,16 +12,24 @@ import (
 
 const difficulty = 1
 
-func Target() *big.Int {
-    target := big.NewInt(1)
-    target.Lsh(target, uint(256 - difficulty))
-    return target
+func SetHash(b *structs.Block) {
+    nonce, hash := run(b)
+    b.Header.Hash = hash[:]
+    b.Header.Nonce = nonce
+
+    addBlock(b)
 }
 
-// Blockchain Validation
-func CalculateHash(block structs.Block, nonce uint64) (string, []byte) {
-    record := []byte(string(block.Header.Height()) + block.Header.Data() + string(nonce))
-    record = append(record, block.Header.PrevHash()...)
+func MineGenesisBlock() {
+    header := &structs.BlockHeader{1, common.MakeTimestamp(), 0, []byte{}, []byte{}}
+    genesisBlock := &structs.Block{header, "Genesis Block"}
+    SetHash(genesisBlock)
+}
+
+// calculateHash does proof of work for the given block.
+func calculateHash(block *structs.Block, nonce uint64) (string, []byte) {
+    record := []byte(string(block.Header.Height) + block.Data + string(nonce))
+    record = append(record, block.Header.PrevHash...)
     h := sha256.New()
     h.Write([]byte(record))
     hashed := h.Sum(nil)
@@ -34,12 +41,12 @@ func isValidHash(hash string, difficulty int) bool {
     return strings.HasPrefix(hash, prefix)
 }
 
-func Run(block structs.Block) (uint64, []byte) {
+func run(block *structs.Block) (uint64, []byte) {
     var nonce uint64 = 0
     var hashBytes []byte
 
     for nonce = 0; ; nonce++ {
-        hashString, hash := CalculateHash(block, nonce)
+        hashString, hash := calculateHash(block, nonce)
         if !isValidHash(hashString, difficulty) {
             fmt.Println(hashString, " do more work!")
             time.Sleep(time.Second)
@@ -54,23 +61,21 @@ func Run(block structs.Block) (uint64, []byte) {
     return nonce, hashBytes
 }
 
-func Validate(b structs.Block) bool {
-    var hashInt big.Int
-    var hash [32]byte
+func addBlock(block *structs.Block) {
+    if structs.CurrentBlockchain() == nil {
+        // Attach the valid block into the blockchain as the genesis block.
+        structs.NewBlockchain(block)
+    }
 
-    data := append(b.Content(), common.UintToHex(b.Nonce())...)
-    hash = sha256.Sum256(data)
-    hashInt.SetBytes(hash[:])
-    return hashInt.Cmp(Target()) == -1
+    blockchain := structs.CurrentBlockchain()
+    if !isBlockValid(block, blockchain.Blocks[len(blockchain.Blocks) - 1]) {
+        return
+    }
+
+    blockchain.AddBlock(block)
 }
 
-func SetHash(b Block) {
-    nonce, hash := pow.Run(b)
-    b.Header.Hash = hash[:]
-    b.Header.Nonce = nonce
-}
-
-func IsBlockValid(newBlock *Block,  prevBlock *Block) bool {
+func isBlockValid(newBlock *structs.Block,  prevBlock *structs.Block) bool {
     if prevBlock.Header.Height + 1 != newBlock.Header.Height {
       return false
     }
@@ -85,7 +90,7 @@ func IsBlockValid(newBlock *Block,  prevBlock *Block) bool {
         }
     }
 
-    _, hash := pow.CalculateHash(newBlock, newBlock.Header.Nonce)
+    _, hash := calculateHash(newBlock, newBlock.Header.Nonce)
     for i := range hash {
         if hash[i] != newBlock.Header.Hash[i] {
             return false
