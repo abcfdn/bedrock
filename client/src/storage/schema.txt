@@ -1,0 +1,5 @@
+chain-leaves => block_leaves_record
+
+block-$block-hash => block_index_record
+
+tx-$tx-hash => tx_index_record

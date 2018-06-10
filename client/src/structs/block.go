@@ -13,20 +13,32 @@ type BlockHeader struct {
     PrevHash, Hash []byte
 }
 
+type BlockIndex struct {
+    Header structs.BlockHeader
+    Location string
+    Offset uint64
+    Size uint64
+}
+
 type Block struct {
     Header BlockHeader
     Data string
 }
 
-func (b *Block) String() string {
+func (header *BlockHeader) String() string {
     return fmt.Sprintf(
-        "Block %d: Timestamp: %d, PrevHash: %v, Hash: %v, Data: %v}",
-        b.Header.Height,
-        b.Header.Timestamp,
-        hex.EncodeToString(b.Header.PrevHash),
-        hex.EncodeToString(b.Header.Hash),
-        b.Data,
+        "{Height=%d, Timestamp=%d, PrevHash=%v, Hash=%v}",
+        header.Height,
+        header.Timestamp,
+        hex.EncodeToString(header.PrevHash),
+        hex.EncodeToString(header.Hash),
     )
+}
+
+func (b *Block) Content() []byte {
+    content := common.UintToHex(b.Header.Height)
+    content = append(content, []byte(b.Header.Data)...)
+    return append(content, b.Header.PrevHash...)
 }
 
 func NewGenesisBlock() *Block {
@@ -41,8 +53,8 @@ func NewBlock(prev *Block, data string) *Block {
     return block
 }
 
-func (b *Block) Content() []byte {
-    content := common.UintToHex(b.Header.Height)
-    content = append(content, []byte(b.Header.Data)...)
-    return append(content, b.Header.PrevHash...)
+func (b *Block) String() string {
+    return fmt.Sprintf(
+        "Header=%s, Data=%v}", b.Header.String(), b.Data,
+    )
 }
