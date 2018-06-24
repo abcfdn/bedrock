@@ -32,3 +32,9 @@ func NewBlock(prev *Block, data string) *Block {
     block := &Block{header, data}
     return block
 }
+
+func NewGenesisBlock(data string) *Block {
+    header := &BlockHeader{1, common.MakeTimestamp(), 0, []byte{}, []byte{}}
+    block := &Block{header, data}
+    return block
+}
