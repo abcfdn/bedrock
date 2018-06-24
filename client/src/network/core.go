@@ -30,9 +30,9 @@ import (
 
 var mutex = &sync.Mutex{}
 
-func main () {
-	Initialize()
-}
+// func main () {
+// 	Initialize()
+// }
 
 func Initialize() {
 	// LibP2P code uses golog to log messages. They log with different
@@ -76,6 +76,7 @@ func Initialize() {
 			log.Fatalln(err)
 		}
 
+		// Get the ipfs ID after the /ipfs/
 		pid, err := ipfsaddr.ValueForProtocol(ma.P_IPFS)
 		if err != nil {
 			log.Fatalln(err)
@@ -187,17 +188,19 @@ func readData(rw *bufio.ReadWriter) {
 		}
 
 		if str != "\n" {
-			chain := make([]structs.Block, 0)
+			blocks := make([]*structs.Block, 0)
 			// Unmarshal the JSON string and populate the chain.
-			if err := json.Unmarshal([]byte(str), &chain); err != nil {
+			if err := json.Unmarshal([]byte(str), &blocks); err != nil {
+				fmt.Printf("This is the invalid chain causing fatal:", str)
 				log.Fatal(err)
 			}
 
 			mutex.Lock()
 			// Simply take the longer chain.
 			currentBlockchain :=  structs.CurrentBlockchain()
-			if len(chain) > len(currentBlockchain.Blocks) {
-				bytes, err := json.MarshalIndent(currentBlockchain, "", " ")
+			if len(blocks) > len(currentBlockchain.Blocks) {
+				currentBlockchain.Blocks = blocks
+				bytes, err := json.MarshalIndent(currentBlockchain.Blocks, "", " ")
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -217,10 +220,10 @@ func writeData(rw *bufio.ReadWriter) {
 		for {
 			// The interval between two blocks getting generated should be dynamically adjusted.
 			// blockInterval := os.Getenv("BLOCKINTERVAL")
-			time.Sleep(1 * time.Second)
+			time.Sleep(5 * time.Second)
 			mutex.Lock()
-			currentBlockchain :=  structs.CurrentBlockchain()
-			bytes, err := json.Marshal(currentBlockchain)
+			currentBlocks :=  structs.CurrentBlockchain().Blocks
+			bytes, err := json.Marshal(currentBlocks)
 			if err != nil {
 				log.Println(err)
 			}
@@ -235,6 +238,7 @@ func writeData(rw *bufio.ReadWriter) {
 
 	stdReader := bufio.NewReader(os.Stdin)
 	for {
+		// This should be replaced by getting TXs from another module.
 		fmt.Print("> ")
 		outputData, err := stdReader.ReadString('\n')
 		if err != nil {
@@ -247,13 +251,13 @@ func writeData(rw *bufio.ReadWriter) {
 		newBlock := structs.NewBlock(currentBlockchain.Blocks[len(currentBlockchain.Blocks) - 1], outputData)
 		currentBlockchain.AddBlock(newBlock)
 
-		bytes, err := json.Marshal(structs.CurrentBlockchain())
+		bytes, err := json.Marshal(structs.CurrentBlockchain().Blocks)
 		if (err != nil) {
 			log.Fatal(err)
 		}
 
 		// Print current blockchain to the console.
-		spew.Dump(structs.CurrentBlockchain())
+		spew.Dump(structs.CurrentBlockchain().Blocks)
 
 		// Broadcast it to the connected peer.
 		mutex.Lock()
